@@ -60,8 +60,8 @@ ema:
   max_value: 0.9999
 
 dataloader:
-  batch_size: 64
-  num_workers: 8
+  batch_size: 32
+  num_workers: 16
   shuffle: True
   pin_memory: True
   persistent_workers: False
@@ -95,8 +95,8 @@ training:
   use_ema: True
   # training loop control
   # in epochs
-  rollout_every: 50
-  checkpoint_every: 50
+  rollout_every: 500000000000000000 # Maybe get away w/ just not running it?
+  checkpoint_every: 10
   val_every: 1
   sample_every: 5
   # steps per epoch
@@ -116,10 +116,10 @@ logging:
 
 checkpoint:
   topk:
-    monitor_key: test_mean_score
-    mode: max
+    monitor_key: val_loss
+    mode: min
     k: 5
-    format_str: 'epoch={epoch:04d}-test_mean_score={test_mean_score:.3f}.ckpt'
+    format_str: 'epoch={epoch:04d}-val_loss={val_loss:.3f}.ckpt'
   save_last_ckpt: True
   save_last_snapshot: False
 
