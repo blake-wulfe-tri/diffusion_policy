@@ -26,6 +26,7 @@ RUN apt-get update && apt-get install -y --allow-downgrades --allow-change-held-
   libjpeg-dev \
   libpng-dev \
   wget \
+  tmux \
   python${PYTHON_VERSION} \
   python${PYTHON_VERSION}-dev \
   && rm -rf /var/lib/apt/lists/*
@@ -60,6 +61,11 @@ RUN wget https://repo.anaconda.com/miniconda/Miniconda3-py39_23.1.0-1-Linux-x86_
 COPY conda_environment.yaml .
 RUN mamba env create -f conda_environment.yaml
 
-# Settings for S3
-RUN aws configure set default.s3.max_concurrent_requests 100 && \
-  aws configure set default.s3.max_queue_size 10000
+# # Settings for S3
+# RUN aws configure set default.s3.max_concurrent_requests 100 && \
+#   aws configure set default.s3.max_queue_size 10000
+
+# TODO
+# 1. install aws cli before setting the s3 settings
+
+
