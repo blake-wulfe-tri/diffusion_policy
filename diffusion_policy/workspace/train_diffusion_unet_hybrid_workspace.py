@@ -274,6 +274,15 @@ class TrainDiffusionUnetHybridWorkspace(BaseWorkspace):
 
                     if topk_ckpt_path is not None:
                         self.save_checkpoint(path=topk_ckpt_path)
+                        # Create symlink to that file, that wandb will itself
+                        # symlink to, and eventually upload.
+                        os.symlink(topk_ckpt_path, self.get_checkpoint_path("best"))
+
+                # # Run the epoch after saving since saving is in a thread.
+                # if ((self.epoch - 1) % cfg.training.checkpoint_every) == 0:
+                #     wandb.save(self.get_checkpoint_path("latest"), policy="now")
+                #     wandb.save(self.get_checkpoint_path("best"), policy="now")
+
                 # ========= eval end for this epoch ==========
                 policy.train()
 
