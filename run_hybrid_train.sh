@@ -4,7 +4,7 @@ python train.py \
        training.seed=42 \
        training.device=cuda:0 \
        hydra.run.dir='data/outputs/${now:%Y.%m.%d}/${now:%H.%M.%S}_${name}_${task_name}' \
-       task=move_forward
+       task=pick_up_ball
 
 #               task=move_to_ball
 

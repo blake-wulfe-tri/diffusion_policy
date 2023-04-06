@@ -257,13 +257,9 @@ class TrainDiffusionUnetHybridWorkspace(BaseWorkspace):
                 if (self.epoch % cfg.training.checkpoint_every) == 0:
                     # checkpointing
                     if cfg.checkpoint.save_last_ckpt:
-                        print("start saving ckpt")
                         self.save_checkpoint(use_thread=False)
-                        print("stop saving ckpt")
                     if cfg.checkpoint.save_last_snapshot:
-                        print("start saving snapshot")
                         self.save_snapshot()
-                        print("stop saving snapshot")
 
                     # sanitize metric names
                     metric_dict = dict()
@@ -277,9 +273,7 @@ class TrainDiffusionUnetHybridWorkspace(BaseWorkspace):
                     topk_ckpt_path = topk_manager.get_ckpt_path(metric_dict)
 
                     if topk_ckpt_path is not None:
-                        print("start saving topk ckpt")
                         self.save_checkpoint(path=topk_ckpt_path, use_thread=False)
-                        print("stop saving topk ckpt")
 
                 # ========= eval end for this epoch ==========
                 policy.train()
