@@ -257,9 +257,13 @@ class TrainDiffusionUnetHybridWorkspace(BaseWorkspace):
                 if (self.epoch % cfg.training.checkpoint_every) == 0:
                     # checkpointing
                     if cfg.checkpoint.save_last_ckpt:
-                        self.save_checkpoint()
+                        print("start saving ckpt")
+                        self.save_checkpoint(use_thread=False)
+                        print("stop saving ckpt")
                     if cfg.checkpoint.save_last_snapshot:
+                        print("start saving snapshot")
                         self.save_snapshot()
+                        print("stop saving snapshot")
 
                     # sanitize metric names
                     metric_dict = dict()
@@ -273,15 +277,9 @@ class TrainDiffusionUnetHybridWorkspace(BaseWorkspace):
                     topk_ckpt_path = topk_manager.get_ckpt_path(metric_dict)
 
                     if topk_ckpt_path is not None:
-                        self.save_checkpoint(path=topk_ckpt_path)
-                        # Create symlink to that file, that wandb will itself
-                        # symlink to, and eventually upload.
-                        os.symlink(topk_ckpt_path, self.get_checkpoint_path("best"))
-
-                # # Run the epoch after saving since saving is in a thread.
-                # if ((self.epoch - 1) % cfg.training.checkpoint_every) == 0:
-                #     wandb.save(self.get_checkpoint_path("latest"), policy="now")
-                #     wandb.save(self.get_checkpoint_path("best"), policy="now")
+                        print("start saving topk ckpt")
+                        self.save_checkpoint(path=topk_ckpt_path, use_thread=False)
+                        print("stop saving topk ckpt")
 
                 # ========= eval end for this epoch ==========
                 policy.train()
