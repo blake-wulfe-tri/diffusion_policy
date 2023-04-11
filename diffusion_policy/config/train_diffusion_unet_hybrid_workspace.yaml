@@ -38,10 +38,11 @@ policy:
   n_obs_steps: ${n_obs_steps}
   num_inference_steps: 100
   obs_as_global_cond: ${obs_as_global_cond}
-  crop_shape: [76, 76]
+  crop_shape: [224, 224]
   # crop_shape: null
   diffusion_step_embed_dim: 128
   down_dims: [512, 1024, 2048]
+  # down_dims: [256, 512, 1024] # anzu
   kernel_size: 5
   n_groups: 8
   cond_predict_scale: True
@@ -60,15 +61,15 @@ ema:
   max_value: 0.9999
 
 dataloader:
-  batch_size: 32
-  num_workers: 16
+  batch_size: 32 # 64
+  num_workers: 8 # 8 # 4 # 8 (I guess 8 causes problems w/ docker due to shm capacity?)
   shuffle: True
   pin_memory: True
   persistent_workers: False
 
 val_dataloader:
-  batch_size: 64
-  num_workers: 8
+  batch_size: 32 # 64
+  num_workers: 8 # 8
   shuffle: False
   pin_memory: True
   persistent_workers: False
@@ -88,7 +89,7 @@ training:
   # optimization
   lr_scheduler: cosine
   lr_warmup_steps: 500
-  num_epochs: 3050
+  num_epochs: 800
   gradient_accumulate_every: 1
   # EMA destroys performance when used with BatchNorm
   # replace BatchNorm with GroupNorm.
@@ -118,9 +119,10 @@ checkpoint:
   topk:
     monitor_key: val_loss
     mode: min
-    k: 5
+    k: 2
     format_str: 'epoch={epoch:04d}-val_loss={val_loss:.3f}.ckpt'
   save_last_ckpt: True
+  save_every: 50
   save_last_snapshot: False
 
 multi_run:

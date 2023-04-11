@@ -1,4 +1,4 @@
-name: pick_up_ball
+name: move_forward
 
 image_shape: &image_shape [3, 256, 256]
 shape_meta: &shape_meta
@@ -8,24 +8,20 @@ shape_meta: &shape_meta
       shape: *image_shape
       type: rgb
     joint_states:
-      shape: [10]
-      # shape: [7]
+      shape: [7]
       type: low_dim
   action:
-    shape: [10]
-    # shape: [7]
+    shape: [7]
 
 env_runner:
   _target_: diffusion_policy.env_runner.no_op_env_runner.NoOpEnvRunner
 
 dataset:
   _target_: diffusion_policy.dataset.r2d2_dataset.R2D2Dataset
-  # zarr_path: /home/datasets/r2d2/tasks/pick_up_ball/diffusion/all.zarr
-  zarr_path: /home/datasets/r2d2/tasks/pick_up_ball/diffusion/all_cartesian_position.zarr
+  zarr_path: /home/datasets/r2d2/tasks/move_forward/diffusion/all_cartesian_position.zarr
   horizon: ${horizon}
   pad_before: ${eval:'${n_obs_steps}-1'}
   pad_after: ${eval:'${n_action_steps}-1'}
   seed: 42
   val_ratio: 0.2
   max_train_episodes: 90
-  overfit_episodes: null

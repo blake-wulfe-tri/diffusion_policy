@@ -61,6 +61,8 @@ RUN wget https://repo.anaconda.com/miniconda/Miniconda3-py39_23.1.0-1-Linux-x86_
 COPY conda_environment.yaml .
 RUN mamba env create -f conda_environment.yaml
 
+RUN pip install jupyter
+
 # # Settings for S3
 # RUN aws configure set default.s3.max_concurrent_requests 100 && \
 #   aws configure set default.s3.max_queue_size 10000
