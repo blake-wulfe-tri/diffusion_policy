@@ -6,8 +6,9 @@ if __name__ == "__main__":
     sys.path.append(ROOT_DIR)
 
 import copy
-from typing import Dict
+import tempfile
 import time
+from typing import Dict
 
 import numpy as np
 import torch
@@ -36,13 +37,16 @@ class R2D2Dataset(BaseImageDataset):
         seed=42,
         val_ratio=0.0,
         max_train_episodes=None,
+        overfit_episodes=None,
     ):
 
         super().__init__()
+
+        tmp_store_path = tempfile.TemporaryDirectory()
         self.replay_buffer = ReplayBuffer.copy_from_path(
             zarr_path,
             keys=["images", "joint_states", "actions"],
-            store=zarr.LMDBStore("/home/datasets/tmp/tmp.mdb"),
+            store=zarr.LMDBStore(tmp_store_path.name),
         )
 
         # Convert state and actions from euler angles to rotation 6d.
@@ -65,7 +69,7 @@ class R2D2Dataset(BaseImageDataset):
         # Close the store and reopen in read only mode to allow for multiple workers.
         self.replay_buffer.root.store.close()
         self.replay_buffer.root = zarr.group(
-            store=zarr.LMDBStore("/home/datasets/tmp/tmp.mdb", readonly=True, lock=False),
+            store=zarr.LMDBStore(tmp_store_path.name, readonly=True, lock=False),
         )
 
         val_mask = get_val_mask(
@@ -76,6 +80,18 @@ class R2D2Dataset(BaseImageDataset):
             mask=train_mask, max_n=max_train_episodes, seed=seed
         )
 
+        if overfit_episodes is not None:
+            val_mask = downsample_mask(
+                mask=val_mask,
+                max_n=1,
+                seed=seed,
+            )
+            train_mask = downsample_mask(
+                train_mask,
+                max_n=overfit_episodes,
+                seed=seed,
+            )
+
         self.sampler = SequenceSampler(
             replay_buffer=self.replay_buffer,
             sequence_length=horizon,
@@ -84,6 +100,7 @@ class R2D2Dataset(BaseImageDataset):
             episode_mask=train_mask,
         )
         self.train_mask = train_mask
+        self.val_mask = val_mask
         self.horizon = horizon
         self.pad_before = pad_before
         self.pad_after = pad_after
@@ -95,9 +112,11 @@ class R2D2Dataset(BaseImageDataset):
             sequence_length=self.horizon,
             pad_before=self.pad_before,
             pad_after=self.pad_after,
-            episode_mask=~self.train_mask,
+            # episode_mask=~self.train_mask,
+            episode_mask=self.val_mask,
         )
-        val_set.train_mask = ~self.train_mask
+        # val_set.train_mask = ~self.train_mask
+        val_set.train_mask = self.val_mask
         return val_set
 
     def get_normalizer(self, mode="limits", **kwargs):
@@ -105,11 +124,8 @@ class R2D2Dataset(BaseImageDataset):
             "action": self.replay_buffer["actions"],
             "joint_states": self.replay_buffer["joint_states"],
         }
-        rot6_data = {}
-        for k, v in data.items():
-            rot6_data[k] = self._convert_pos_euler_gripper_to_pos_rot6_gripper(v)
         normalizer = LinearNormalizer()
-        normalizer.fit(data=rot6_data, last_n_dims=1, mode=mode, **kwargs)
+        normalizer.fit(data=data, last_n_dims=1, mode=mode, **kwargs)
         normalizer["images"] = get_image_range_normalizer()
         return normalizer
 
@@ -118,7 +134,7 @@ class R2D2Dataset(BaseImageDataset):
 
     def _convert_pos_euler_gripper_to_pos_rot6_gripper(self, x):
         T = len(x)
-        ret = np.empty((T, 10), dtype=x.dtype)
+        ret = np.zeros((T, 10), dtype=x.dtype)
         ret[:, :3] = x[:, :3]
         ret[:, 3:9] = self.rotation_transformer.forward(x[:, 3:6])
         ret[:, 9] = x[:, 6]

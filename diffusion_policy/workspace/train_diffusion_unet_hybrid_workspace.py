@@ -254,12 +254,15 @@ class TrainDiffusionUnetHybridWorkspace(BaseWorkspace):
                         del mse
                 
                 # checkpoint
+                if cfg.checkpoint.save_every is not None and (self.epoch % cfg.checkpoint.save_every) == 0:
+                    self.save_checkpoint(tag=f"epoch_{self.epoch}")
+                
                 if (self.epoch % cfg.training.checkpoint_every) == 0:
                     # checkpointing
                     if cfg.checkpoint.save_last_ckpt:
                         self.save_checkpoint(use_thread=False)
                     if cfg.checkpoint.save_last_snapshot:
-                        self.save_snapshot()
+                        self.save_snapshot()                        
 
                     # sanitize metric names
                     metric_dict = dict()
