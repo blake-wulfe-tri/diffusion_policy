@@ -137,6 +137,7 @@ class TrainDiffusionUnetImageWorkspace(BaseWorkspace):
 
         # save batch for sampling
         train_sampling_batch = None
+        val_sampling_batch = None
 
         if cfg.training.debug:
             cfg.training.num_epochs = 2
@@ -228,6 +229,8 @@ class TrainDiffusionUnetImageWorkspace(BaseWorkspace):
                                 leave=False, mininterval=cfg.training.tqdm_interval_sec) as tepoch:
                             for batch_idx, batch in enumerate(tepoch):
                                 batch = dict_apply(batch, lambda x: x.to(device, non_blocking=True))
+                                if val_sampling_batch is None:
+                                    val_sampling_batch = batch
                                 loss = self.model.compute_loss(batch)
                                 val_losses.append(loss)
                                 if (cfg.training.max_val_steps is not None) \
@@ -241,21 +244,25 @@ class TrainDiffusionUnetImageWorkspace(BaseWorkspace):
                 # run diffusion sampling on a training batch
                 if (self.epoch % cfg.training.sample_every) == 0:
                     with torch.no_grad():
-                        # sample trajectory from training set, and evaluate difference
-                        batch = dict_apply(train_sampling_batch, lambda x: x.to(device, non_blocking=True))
-                        obs_dict = batch['obs']
-                        gt_action = batch['action']
+                        for split, split_batch in zip(
+                                ["train", "val"],
+                                [train_sampling_batch, val_sampling_batch],
+                        ):
+                            # sample trajectory from training set, and evaluate difference
+                            batch = dict_apply(split_batch, lambda x: x.to(device, non_blocking=True))
+                            obs_dict = batch['obs']
+                            gt_action = batch['action']
                         
-                        result = policy.predict_action(obs_dict)
-                        pred_action = result['action_pred']
-                        mse = torch.nn.functional.mse_loss(pred_action, gt_action)
-                        step_log['train_action_mse_error'] = mse.item()
-                        del batch
-                        del obs_dict
-                        del gt_action
-                        del result
-                        del pred_action
-                        del mse
+                            result = policy.predict_action(obs_dict)
+                            pred_action = result['action_pred']
+                            mse = torch.nn.functional.mse_loss(pred_action, gt_action)
+                            step_log[f'{split}_action_mse_error'] = mse.item()
+                            del batch
+                            del obs_dict
+                            del gt_action
+                            del result
+                            del pred_action
+                            del mse
                 
                 # checkpoint
                 if (self.epoch % cfg.training.checkpoint_every) == 0:
