@@ -211,7 +211,9 @@ class DiffusionUnetHybridImagePolicy(BaseImagePolicy):
 
         return trajectory
 
-
+    def forward(self, obs_dict: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
+        return self.predict_action(obs_dict)
+    
     def predict_action(self, obs_dict: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
         """
         obs_dict: must include "obs" key
